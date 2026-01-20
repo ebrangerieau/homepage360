@@ -1,0 +1,5 @@
+# Folders to ignore
+Exemple/
+node_modules/
+.DS_Store
+*.log
