@@ -22,7 +22,18 @@
 - ⌨️ **Raccourcis Clavier** : Navigation optimisée (ex: `/` pour rechercher).
 - 👤 **Gestion de Profils** : Créez différents profils pour vos contextes (Travail, Maison, etc.).
 
-## 🚀 Installation locale
+## 🐳 Déploiement avec Docker
+
+Le projet est prêt à être déployé via Docker pour une installation simplifiée.
+
+1. **Construire et lancer avec Docker Compose** :
+   ```bash
+   docker-compose up -d --build
+   ```
+2. **Accéder à l'application** :
+   Ouvrez votre navigateur sur `http://localhost:8080`.
+
+## 🚀 Installation locale sans Docker
 
 Aucune installation complexe n'est requise. Le projet utilise du JavaScript natif (ES6 Modules).
 
