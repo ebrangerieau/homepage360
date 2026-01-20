@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Homepage 360</title>
+  <link rel="stylesheet" href="style.css" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@400;600&display=swap"
+    rel="stylesheet" />
+  <link rel="manifest" href="manifest.json" />
+</head>
+
+<body>
+  <div class="cyber-grid"></div>
+  <header class="header">
+    <div class="header-left">
+      <h1>Homepage 360</h1>
+      <div id="profile-container" class="profile-container">
+        <select id="profile-select" title="Changer de profil">
+          <option value="default">Défaut</option>
+        </select>
+        <button id="rename-profile-btn" title="Renommer le profil">✎</button>
+        <button id="add-profile-btn" title="Nouveau profil">+</button>
+        <button id="delete-profile-btn" title="Supprimer le profil">×</button>
+      </div>
+    </div>
+    <div class="search-container">
+      <input type="text" id="search-input" placeholder="Rechercher un raccourci..." />
+    </div>
+    <div class="header-controls">
+      <button id="add-zone-btn" aria-label="Add zone" title="Ajouter une zone">🗂️+</button>
+      <button id="add-block-btn" aria-label="Add block" title="Ajouter un bloc">🔗+</button>
+      <button id="bg-btn" aria-label="Custom Background" title="Fond d'écran">🖼️</button>
+      <button id="export-btn" aria-label="Export config" title="Exporter la configuration">💾</button>
+      <button id="import-btn" aria-label="Import config" title="Restaurer la configuration">⬆️</button>
+      <button id="theme-toggle" aria-label="Toggle dark mode">🌙</button>
+      <button id="help-btn" aria-label="Keyboard Shortcuts" title="Raccourcis clavier">❓</button>
+      <button id="notes-toggle-btn" aria-label="Toggle Notes" title="Notes (Alt+N)">📝</button>
+      <input type="file" id="import-file" style="display:none" accept=".json" />
+      <div id="weather-widget" class="weather-widget">
+        <span class="weather-icon">--</span>
+        <span class="weather-temp">--°C</span>
+      </div>
+      <div class="status-widget">
+        <div class="status-indicator">
+          <span class="pulse-dot"></span>
+          <span class="status-text">SYSTEM ONLINE</span>
+        </div>
+        <div class="clock-display">
+          <span id="current-time">--:--:--</span>
+          <span id="current-date">-- --, ----</span>
+        </div>
+      </div>
+    </div>
+  </header>
+  <div class="main-container">
+    <main id="zones" class="zones">
+      <!-- Zones will be injected by script.js -->
+    </main>
+    <aside class="rss-sidebar">
+      <div class="rss-header">
+        <h2>Flux RSS</h2>
+        <div class="rss-controls">
+          <button id="rss-settings-btn" title="Gérer les flux"
+            style="background:none; border:none; cursor:pointer; font-size:1.2rem; color:inherit; opacity:0.7;">⚙️</button>
+          <button id="refresh-rss" title="Rafraîchir"
+            style="background:none; border:none; cursor:pointer; font-size:1.2rem; color:inherit; opacity:0.7;">🔄</button>
+        </div>
+      </div>
+      <div id="rss-list" class="rss-list">
+        <!-- RSS items will be injected by script.js -->
+        <div style="text-align:center; padding:2rem; opacity:0.5;">Chargement des flux...</div>
+      </div>
+      <div class="rss-scroll-controls">
+        <button id="rss-up-btn" title="Monter">⬆️</button>
+        <button id="rss-down-btn" title="Descendre">⬇️</button>
+      </div>
+    </aside>
+  </div>
+
+  <!-- Modal for adding blocks -->
+  <div id="add-modal" class="modal hidden">
+    <div class="modal-content">
+      <h3>Ajouter un bloc</h3>
+      <form id="add-block-form">
+        <label>
+          Titre
+          <input type="text" name="label" required placeholder="Ex: Google" />
+        </label>
+        <label>
+          URL
+          <input type="url" name="url" required placeholder="https://..." />
+        </label>
+        <label>
+          Zone
+          <select name="zone" id="zone-select" required></select>
+        </label>
+        <div class="modal-actions">
+          <button type="button" id="cancel-btn">Annuler</button>
+          <button type="submit" class="primary">Ajouter</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal for adding zones -->
+  <div id="add-zone-modal" class="modal hidden">
+    <div class="modal-content">
+      <h3>Ajouter une zone</h3>
+      <form id="add-zone-form">
+        <label>
+          Titre de la zone
+          <input type="text" name="zone-title" required placeholder="Ex: Finance" />
+        </label>
+        <div class="modal-actions">
+          <button type="button" id="cancel-zone-btn">Annuler</button>
+          <button type="submit" class="primary">Ajouter</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal for Custom Background -->
+  <div id="bg-modal" class="modal hidden">
+    <div class="modal-content">
+      <h3>Fond d'écran</h3>
+      <form id="bg-form">
+        <label>
+          URL de l'image
+          <input type="url" name="bg-url" placeholder="https://..." />
+        </label>
+        <div style="text-align: center; margin: 1rem 0; opacity: 0.5; font-size: 0.8rem;">— OU —</div>
+        <label>
+          Image locale
+          <input type="file" id="bg-file-input" accept="image/*" style="border: none; background: none; padding: 0;" />
+        </label>
+        <div class="modal-actions">
+          <button type="button" id="reset-bg-btn">Réinitialiser</button>
+          <button type="button" id="cancel-bg-btn">Annuler</button>
+          <button type="submit" class="primary">Appliquer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal for managing RSS feeds -->
+  <div id="rss-modal" class="modal hidden">
+    <div class="modal-content" style="width: 400px;">
+      <h3>Gérer les flux RSS</h3>
+      <div id="rss-manage-list"
+        style="max-height: 200px; overflow-y: auto; margin-bottom: 1rem; border: 1px solid var(--color-border); border-radius: 4px; padding: 0.5rem;">
+        <!-- RSS list items will be injected here -->
+      </div>
+      <div style="margin-bottom: 1.5rem;">
+        <label style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+          <span>Articles max. par flux :</span>
+          <input type="number" id="rss-items-limit" min="1" max="50" style="width: 70px; margin-top: 0;" />
+        </label>
+      </div>
+      <form id="add-rss-form">
+        <label>
+          Nom du site
+          <input type="text" name="rss-name" required placeholder="Ex: BBC News" />
+        </label>
+        <label>
+          URL du flux RSS
+          <input type="url" name="rss-url" required placeholder="https://..." />
+        </label>
+        <div class="modal-actions">
+          <button type="button" id="close-rss-modal">Fermer</button>
+          <button type="submit" class="primary">Ajouter</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal for Keyboard Shortcuts Help -->
+  <div id="help-modal" class="modal hidden">
+    <div class="modal-content" style="width: 450px;">
+      <h3 style="border-bottom: 1px solid var(--color-border); padding-bottom: 0.5rem; margin-bottom: 1rem;">Raccourcis
+        Clavier</h3>
+      <div class="shortcuts-grid">
+        <div class="shortcut-row"><kbd>/</kbd> <span>Focus la recherche</span></div>
+        <div class="shortcut-row"><kbd>N</kbd> <span>Ajouter un bloc</span></div>
+        <div class="shortcut-row"><kbd>Z</kbd> <span>Ajouter une zone</span></div>
+        <div class="shortcut-row"><kbd>T</kbd> <span>Changer le thème</span></div>
+        <div class="shortcut-row"><kbd>R</kbd> <span>Rafraîchir les flux RSS</span></div>
+        <div class="shortcut-row"><kbd>H</kbd> <span>Afficher cette aide</span></div>
+        <div class="shortcut-row"><kbd>Esc</kbd> <span>Fermer / Quitter</span></div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" id="close-help-btn" class="primary">Compris</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal for Profile Management -->
+  <div id="profile-modal" class="modal hidden">
+    <div class="modal-content">
+      <h3 id="profile-modal-title">Nouveau Profil</h3>
+      <form id="profile-form">
+        <label>
+          Nom du profil
+          <input type="text" name="profile-name" id="profile-name-input" required
+            placeholder="Ex: Travail, Maison..." />
+        </label>
+        <div class="modal-actions">
+          <button type="button" id="cancel-profile-btn">Annuler</button>
+          <button type="submit" id="profile-submit-btn" class="primary">Créer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal for Weather Settings -->
+  <div id="weather-modal" class="modal hidden">
+    <div class="modal-content" style="width: 350px;">
+      <h3>Météo Locale</h3>
+      <form id="weather-form">
+        <label>
+          Ville
+          <input type="text" name="city" required placeholder="Ex: Paris, Lyon..." />
+        </label>
+        <div class="modal-actions">
+          <button type="button" id="use-gps-btn" title="Utiliser ma position actuelle">📍 GPS</button>
+          <button type="button" id="cancel-weather-btn">Annuler</button>
+          <button type="submit" class="primary">Rechercher</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal for Confirmation -->
+  <div id="confirm-modal" class="modal hidden">
+    <div class="modal-content" style="width: 350px;">
+      <h3 id="confirm-modal-title">Confirmation</h3>
+      <p id="confirm-modal-message" style="margin: 1rem 0; opacity: 0.8; line-height: 1.4;"></p>
+      <div class="modal-actions">
+        <button type="button" id="confirm-cancel-btn">Annuler</button>
+        <button type="button" id="confirm-ok-btn" class="primary" style="background: #ff4444;">Supprimer</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+  <script type="module" src="js/main.js"></script>
+</body>
+
+</html>
