@@ -6,6 +6,8 @@ services:
     image: homepage360:latest
     container_name: homepage360
     restart: always
+    ports:
+      - "8080:80"
     networks:
       - web
     labels:
