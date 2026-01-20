@@ -178,10 +178,10 @@ body {
   color: var(--color-text);
   transition: background var(--transition-speed) var(--transition-timing),
     color var(--transition-speed) var(--transition-timing);
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
 }
 
 body.has-bg::before {
