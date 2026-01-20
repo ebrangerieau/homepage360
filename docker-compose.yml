@@ -1,6 +1,8 @@
 services:
   homepage360:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     image: homepage360:latest
     container_name: homepage360
     restart: always
