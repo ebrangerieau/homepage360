@@ -1,6 +1,7 @@
 services:
   homepage360:
     build: .
+    image: homepage360:latest
     container_name: homepage360
     restart: always
     networks:
