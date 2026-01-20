@@ -56,9 +56,17 @@
     </div>
   </header>
   <div class="main-container">
-    <main id="zones" class="zones">
-      <!-- Zones will be injected by script.js -->
-    </main>
+    <div class="content-wrapper">
+      <div class="google-search-container">
+        <form action="https://www.google.com/search" method="GET" target="_blank" id="google-search-form">
+          <span class="search-icon-g">G</span>
+          <input type="text" name="q" placeholder="Recherche Google..." autocomplete="off" />
+        </form>
+      </div>
+      <main id="zones" class="zones">
+        <!-- Zones will be injected by script.js -->
+      </main>
+    </div>
     <aside class="rss-sidebar">
       <div class="rss-header">
         <h2>Flux RSS</h2>

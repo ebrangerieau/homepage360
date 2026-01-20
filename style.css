@@ -1261,6 +1261,63 @@ kbd {
   flex-direction: column;
 }
 
+/* Main Layout Wrapper */
+.content-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Google Search Container */
+.google-search-container {
+  padding: 2rem 2rem 0.5rem 2rem;
+  display: flex;
+  justify-content: center;
+  flex-shrink: 0;
+  animation: slideDown 0.5s var(--transition-timing);
+  z-index: 50;
+}
+
+.google-search-container form {
+  position: relative;
+  width: 100%;
+  max-width: 600px;
+}
+
+.google-search-container input {
+  width: 100%;
+  padding: 1rem 1rem 1rem 3.5rem;
+  border-radius: 50px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 1.1rem;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s var(--transition-timing);
+  backdrop-filter: blur(10px);
+}
+
+.google-search-container input:focus {
+  outline: none;
+  box-shadow: 0 8px 25px rgba(var(--color-primary-rgb), 0.3);
+  border-color: var(--color-primary);
+  transform: translateY(-2px);
+}
+
+.search-icon-g {
+  position: absolute;
+  left: 1.2rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-weight: 900;
+  font-size: 1.2rem;
+  color: var(--color-primary);
+  pointer-events: none;
+  font-family: 'Space Grotesk', sans-serif;
+}
+
 .rss-content {
   display: flex;
   flex-direction: column;
