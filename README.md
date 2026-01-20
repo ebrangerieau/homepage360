@@ -22,18 +22,18 @@
 - ⌨️ **Raccourcis Clavier** : Navigation optimisée (ex: `/` pour rechercher).
 - 👤 **Gestion de Profils** : Créez différents profils pour vos contextes (Travail, Maison, etc.).
 
-## 🐳 Déploiement avec Docker
+## 🐳 Déploiement avec Docker & Traefik
 
-Le projet est prêt à être déployé via Docker pour une installation simplifiée.
+Le projet est pré-configuré pour être déployé derrière un reverse-proxy **Traefik** avec gestion automatique des certificats SSL (Let's Encrypt).
 
-1. **Construire et lancer avec Docker Compose** :
+1. **Pré-requis** : Un réseau Docker nommé `web` doit exister (`docker network create web`).
+2. **Configuration** : Modifiez le fichier `docker-compose.yml` pour remplacer `votre-domaine.com` par votre domaine réel.
+3. **Lancement** :
    ```bash
    docker-compose up -d --build
    ```
-2. **Accéder à l'application** :
-   Ouvrez votre navigateur sur `http://localhost:8080`.
 
-## 🚀 Installation locale sans Docker
+## 🚀 Installation locale (Développement)
 
 Aucune installation complexe n'est requise. Le projet utilise du JavaScript natif (ES6 Modules).
 
