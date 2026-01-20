@@ -1003,6 +1003,21 @@ body.has-bg .header {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-primary) var(--color-surface);
+}
+
+.rss-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.rss-list::-webkit-scrollbar-thumb {
+  background-color: var(--color-primary);
+  border-radius: 3px;
+}
+
+.rss-list::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 .rss-item {
