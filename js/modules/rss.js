@@ -3,6 +3,37 @@
 import { getConfig, persistState } from './store.js';
 import { showToast } from './ui.js';
 
+// Function to scrape Open Graph image from article URL
+async function scrapeOGImage(articleUrl) {
+    try {
+        // Using allorigins as CORS proxy
+        const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(articleUrl)}`;
+        const response = await fetch(proxyUrl);
+        const html = await response.text();
+
+        // Try to find og:image meta tag
+        const ogImageMatch = html.match(/<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["']/i) ||
+            html.match(/<meta[^>]*content=["']([^"']+)["'][^>]*property=["']og:image["']/i);
+
+        if (ogImageMatch && ogImageMatch[1]) {
+            return ogImageMatch[1];
+        }
+
+        // Fallback: try twitter:image
+        const twitterImageMatch = html.match(/<meta[^>]*name=["']twitter:image["'][^>]*content=["']([^"']+)["']/i) ||
+            html.match(/<meta[^>]*content=["']([^"']+)["'][^>]*name=["']twitter:image["']/i);
+
+        if (twitterImageMatch && twitterImageMatch[1]) {
+            return twitterImageMatch[1];
+        }
+
+        return null;
+    } catch (err) {
+        console.error('OG Image scraping error for', articleUrl, ':', err);
+        return null;
+    }
+}
+
 async function fetchRSS(feedUrl) {
     // Using rss2json service as a free CORS proxy
     const proxyUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feedUrl)}`;
@@ -10,10 +41,8 @@ async function fetchRSS(feedUrl) {
         const response = await fetch(proxyUrl);
         const data = await response.json();
         if (data.status === 'ok') {
-            // Get fallback image from feed (logo/icon)
-            const feedImage = data.feed?.image || null;
-
-            return data.items.map(item => {
+            // Process items and fetch missing images in parallel
+            const itemsWithImages = await Promise.all(data.items.map(async (item) => {
                 // Try to extract image from multiple sources
                 let image = item.enclosure?.link || item.thumbnail || null;
 
@@ -26,9 +55,9 @@ async function fetchRSS(feedUrl) {
                     }
                 }
 
-                // Use feed image as last fallback if no article image found
-                if (!image && feedImage) {
-                    image = feedImage;
+                // If still no image, scrape the article page for Open Graph image
+                if (!image && item.link) {
+                    image = await scrapeOGImage(item.link);
                 }
 
                 return {
@@ -39,7 +68,9 @@ async function fetchRSS(feedUrl) {
                     source: data.feed.title || 'Source',
                     image: image
                 };
-            });
+            }));
+
+            return itemsWithImages;
         }
         return [];
     } catch (err) {
