@@ -1336,3 +1336,61 @@ kbd {
   flex-direction: column;
   gap: 0.25rem;
 }
+
+/* RSS Management Styles */
+.rss-manage-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.8rem;
+  background: rgba(255, 255, 255, 0.03);
+  margin-bottom: 0.5rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--color-border);
+  cursor: default;
+}
+
+.rss-manage-item .drag-handle {
+  cursor: grab;
+  margin-right: 1rem;
+  opacity: 0.5;
+  font-size: 1.2rem;
+  user-select: none;
+}
+
+.rss-manage-item .drag-handle:active {
+  cursor: grabbing;
+}
+
+.rss-manage-item span {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.9rem;
+}
+
+.rss-manage-item .delete-rss-btn {
+  background: none;
+  border: none;
+  color: #ff4444;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0 0.5rem;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+.rss-manage-item .delete-rss-btn:hover {
+  opacity: 1;
+}
+
+/* SortableJS Styles */
+.sortable-ghost {
+  opacity: 0.3;
+  background: var(--color-primary) !important;
+}
+
+.sortable-chosen {
+  background: rgba(var(--color-primary), 0.1) !important;
+}

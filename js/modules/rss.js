@@ -279,10 +279,32 @@ function initRSSManagement() {
         limitInput.value = config.rssItemsLimit || 3;
         list.innerHTML = config.rss.map((feed, index) => `
       <div class="rss-manage-item">
+        <div class="drag-handle" title="Faire glisser pour réordonner">☰</div>
         <span>${feed.name}</span>
         <button class="delete-rss-btn" data-index="${index}" title="Supprimer">×</button>
       </div>
     `).join('');
+
+        // Initialize SortableJS for reordering
+        if (window.Sortable) {
+            new Sortable(list, {
+                handle: '.drag-handle',
+                animation: 150,
+                ghostClass: 'sortable-ghost',
+                chosenClass: 'sortable-chosen',
+                onEnd: () => {
+                    const items = Array.from(list.querySelectorAll('.rss-manage-item'));
+                    const newRss = items.map(item => {
+                        const index = parseInt(item.querySelector('.delete-rss-btn').dataset.index);
+                        return config.rss[index];
+                    });
+                    config.rss = newRss;
+                    persistState();
+                    renderManageList(); // Update indexes
+                    fetchAllRSS();
+                }
+            });
+        }
 
         list.querySelectorAll('.delete-rss-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
