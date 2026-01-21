@@ -3,20 +3,87 @@
 import { getConfig, persistState } from './store.js';
 import { showToast } from './ui.js';
 
-// Function to scrape Open Graph image from article URL
-async function scrapeOGImage(articleUrl) {
+// Cache for scraped images (in memory for session)
+const imageCache = new Map();
+
+// Load image cache from localStorage
+function loadImageCache() {
     try {
-        // Using allorigins as CORS proxy
+        const cached = localStorage.getItem('rss_image_cache');
+        if (cached) {
+            const parsed = JSON.parse(cached);
+            Object.entries(parsed).forEach(([url, img]) => imageCache.set(url, img));
+        }
+    } catch (e) {
+        console.error('Failed to load image cache:', e);
+    }
+}
+
+// Save image cache to localStorage
+function saveImageCache() {
+    try {
+        const cacheObj = {};
+        imageCache.forEach((value, key) => {
+            cacheObj[key] = value;
+        });
+        localStorage.setItem('rss_image_cache', JSON.stringify(cacheObj));
+    } catch (e) {
+        console.error('Failed to save image cache:', e);
+    }
+}
+
+// Initialize cache on module load
+loadImageCache();
+
+// Function to scrape Open Graph image from article URL (optimized)
+async function scrapeOGImage(articleUrl, timeout = 5000) {
+    // Check cache first
+    if (imageCache.has(articleUrl)) {
+        return imageCache.get(articleUrl);
+    }
+
+    try {
+        // Using allorigins as CORS proxy with timeout
         const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(articleUrl)}`;
-        const response = await fetch(proxyUrl);
-        const html = await response.text();
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+        const response = await fetch(proxyUrl, {
+            signal: controller.signal,
+            // Only read first 1MB like danb/rss does
+        });
+        clearTimeout(timeoutId);
+
+        // Read only first 1MB to save memory and time
+        const reader = response.body.getReader();
+        const chunks = [];
+        let totalSize = 0;
+        const maxSize = 1024 * 1024; // 1MB limit
+
+        while (totalSize < maxSize) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            chunks.push(value);
+            totalSize += value.length;
+        }
+
+        // Cancel reading if we hit the limit
+        await reader.cancel();
+
+        // Convert chunks to text
+        const blob = new Blob(chunks);
+        const html = await blob.text();
 
         // Try to find og:image meta tag
         const ogImageMatch = html.match(/<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["']/i) ||
             html.match(/<meta[^>]*content=["']([^"']+)["'][^>]*property=["']og:image["']/i);
 
         if (ogImageMatch && ogImageMatch[1]) {
-            return ogImageMatch[1];
+            const imageUrl = ogImageMatch[1];
+            imageCache.set(articleUrl, imageUrl);
+            saveImageCache();
+            return imageUrl;
         }
 
         // Fallback: try twitter:image
@@ -24,14 +91,45 @@ async function scrapeOGImage(articleUrl) {
             html.match(/<meta[^>]*content=["']([^"']+)["'][^>]*name=["']twitter:image["']/i);
 
         if (twitterImageMatch && twitterImageMatch[1]) {
-            return twitterImageMatch[1];
+            const imageUrl = twitterImageMatch[1];
+            imageCache.set(articleUrl, imageUrl);
+            saveImageCache();
+            return imageUrl;
         }
 
+        // Cache null result to avoid retrying
+        imageCache.set(articleUrl, null);
         return null;
     } catch (err) {
-        console.error('OG Image scraping error for', articleUrl, ':', err);
+        if (err.name === 'AbortError') {
+            console.warn('Scraping timeout for', articleUrl);
+        } else {
+            console.error('OG Image scraping error for', articleUrl, ':', err);
+        }
         return null;
     }
+}
+
+// Helper function to limit concurrent requests
+async function limitConcurrency(items, asyncFn, limit = 3) {
+    const results = [];
+    const executing = [];
+
+    for (const item of items) {
+        const p = asyncFn(item).then(result => {
+            executing.splice(executing.indexOf(p), 1);
+            return result;
+        });
+
+        results.push(p);
+        executing.push(p);
+
+        if (executing.length >= limit) {
+            await Promise.race(executing);
+        }
+    }
+
+    return Promise.all(results);
 }
 
 async function fetchRSS(feedUrl) {
@@ -41,15 +139,24 @@ async function fetchRSS(feedUrl) {
         const response = await fetch(proxyUrl);
         const data = await response.json();
         if (data.status === 'ok') {
-            // Process items and fetch missing images in parallel
-            const itemsWithImages = await Promise.all(data.items.map(async (item) => {
-                // Try to extract image from multiple sources
-                let image = item.enclosure?.link || item.thumbnail || null;
+            // First, extract basic data and check for existing images
+            const items = data.items.map(item => ({
+                title: item.title,
+                link: item.link,
+                pubDate: item.pubDate,
+                description: item.description.replace(/<[^>]*>?/gm, '').slice(0, 150) + '...',
+                source: data.feed.title || 'Source',
+                image: item.enclosure?.link || item.thumbnail || null,
+                rawContent: item.content || item.description
+            }));
+
+            // Process items with limited concurrency for scraping
+            const itemsWithImages = await limitConcurrency(items, async (item) => {
+                let image = item.image;
 
                 // If no image found, try to extract from HTML content
-                if (!image && (item.content || item.description)) {
-                    const htmlContent = item.content || item.description;
-                    const imgMatch = htmlContent.match(/<img[^>]+src="([^">]+)"/);
+                if (!image && item.rawContent) {
+                    const imgMatch = item.rawContent.match(/<img[^>]+src="([^">]+)"/);
                     if (imgMatch && imgMatch[1]) {
                         image = imgMatch[1];
                     }
@@ -60,15 +167,16 @@ async function fetchRSS(feedUrl) {
                     image = await scrapeOGImage(item.link);
                 }
 
+                // Return item without rawContent
                 return {
                     title: item.title,
                     link: item.link,
                     pubDate: item.pubDate,
-                    description: item.description.replace(/<[^>]*>?/gm, '').slice(0, 150) + '...',
-                    source: data.feed.title || 'Source',
+                    description: item.description,
+                    source: item.source,
                     image: image
                 };
-            }));
+            }, 3); // Max 3 concurrent scraping requests
 
             return itemsWithImages;
         }
@@ -78,6 +186,7 @@ async function fetchRSS(feedUrl) {
         return [];
     }
 }
+
 
 export async function fetchAllRSS() {
     const rssList = document.getElementById('rss-list');
