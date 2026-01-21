@@ -10,14 +10,36 @@ async function fetchRSS(feedUrl) {
         const response = await fetch(proxyUrl);
         const data = await response.json();
         if (data.status === 'ok') {
-            return data.items.map(item => ({
-                title: item.title,
-                link: item.link,
-                pubDate: item.pubDate,
-                description: item.description.replace(/<[^>]*>?/gm, '').slice(0, 150) + '...',
-                source: data.feed.title || 'Source',
-                image: item.enclosure?.link || item.thumbnail || null
-            }));
+            // Get fallback image from feed (logo/icon)
+            const feedImage = data.feed?.image || null;
+
+            return data.items.map(item => {
+                // Try to extract image from multiple sources
+                let image = item.enclosure?.link || item.thumbnail || null;
+
+                // If no image found, try to extract from HTML content
+                if (!image && (item.content || item.description)) {
+                    const htmlContent = item.content || item.description;
+                    const imgMatch = htmlContent.match(/<img[^>]+src="([^">]+)"/);
+                    if (imgMatch && imgMatch[1]) {
+                        image = imgMatch[1];
+                    }
+                }
+
+                // Use feed image as last fallback if no article image found
+                if (!image && feedImage) {
+                    image = feedImage;
+                }
+
+                return {
+                    title: item.title,
+                    link: item.link,
+                    pubDate: item.pubDate,
+                    description: item.description.replace(/<[^>]*>?/gm, '').slice(0, 150) + '...',
+                    source: data.feed.title || 'Source',
+                    image: image
+                };
+            });
         }
         return [];
     } catch (err) {

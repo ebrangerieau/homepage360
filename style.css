@@ -1029,6 +1029,9 @@ body.has-bg .header {
   cursor: pointer;
   position: relative;
   overflow: hidden;
+  min-height: 280px;
+  display: flex;
+  flex-direction: column;
 }
 
 .rss-item::before {
@@ -1269,11 +1272,6 @@ kbd {
   border-radius: var(--radius);
   margin-bottom: 0.5rem;
   background: rgba(0, 0, 0, 0.1);
-}
-
-.rss-item {
-  display: flex;
-  flex-direction: column;
 }
 
 /* Main Layout Wrapper */
