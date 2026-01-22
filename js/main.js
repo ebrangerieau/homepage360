@@ -43,6 +43,9 @@ function render(searchQuery = '') {
             const blk = document.createElement('div');
             blk.className = 'block';
             blk.dataset.blockId = block.id;
+            if (block.color) {
+                blk.style.background = block.color;
+            }
 
             blk.onclick = (e) => {
                 if (!e.target.closest('.block-action-btn')) {
@@ -223,6 +226,7 @@ function openBlockModal(mode = 'add', blockData = null) {
         form.elements['label'].value = blockData.label;
         form.elements['url'].value = blockData.url;
         form.elements['zone'].value = blockData.zone;
+        form.elements['color'].value = blockData.color || '#4b2bee';
     } else {
         modalTitle.textContent = 'Ajouter un bloc';
         submitBtn.textContent = 'Ajouter';
@@ -250,7 +254,8 @@ function initModal() {
         const blockData = {
             label: formData.get('label'),
             url: formData.get('url'),
-            zone: formData.get('zone')
+            zone: formData.get('zone'),
+            color: formData.get('color')
         };
 
         if (editingBlockId) {
