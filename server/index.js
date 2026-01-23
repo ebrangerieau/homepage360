@@ -15,7 +15,11 @@ app.use(cors());
 app.use(express.json());
 
 // Serve static files from parent directory (Homepage360 frontend)
-app.use(express.static(path.join(__dirname, '..')));
+const staticPath = path.join(__dirname, '..');
+console.log('Static files path:', staticPath);
+console.log('index.html path:', path.join(staticPath, 'index.html'));
+
+app.use(express.static(staticPath));
 
 // API Key validation middleware
 const validateApiKey = (req, res, next) => {
