@@ -1,0 +1,12 @@
+services:
+  homepage360-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: homepage360-agent:latest
+    container_name: homepage360-agent
+    restart: always
+    volumes:
+      - ./config.json:/app/config.json:ro
+    # Use host network mode to ping local devices
+    network_mode: host

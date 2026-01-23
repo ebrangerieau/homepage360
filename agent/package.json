@@ -1,0 +1,12 @@
+{
+    "name": "homepage360-agent",
+    "version": "1.0.0",
+    "description": "Local network monitoring agent for Homepage360",
+    "main": "agent.js",
+    "scripts": {
+        "start": "node agent.js"
+    },
+    "dependencies": {
+        "ping": "^0.4.4"
+    }
+}

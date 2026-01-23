@@ -1,11 +1,18 @@
-# Utiliser une image légère de Nginx
-FROM nginx:alpine
+FROM node:20-alpine
 
-# Copier les fichiers du projet dans le dossier par défaut de Nginx
-COPY . /usr/share/nginx/html
+WORKDIR /app
 
-# Exposer le port 80
-EXPOSE 80
+# Copy server files
+COPY server/package*.json ./server/
+WORKDIR /app/server
+RUN npm install --production
 
-# Commande par défaut pour lancer Nginx
-CMD ["nginx", "-g", "daemon off;"]
+# Copy all application files
+WORKDIR /app
+COPY . .
+
+WORKDIR /app/server
+
+EXPOSE 3000
+
+CMD ["node", "index.js"]

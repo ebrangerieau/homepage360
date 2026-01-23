@@ -1,5 +1,11 @@
 # Folders to ignore
 Exemple/
 node_modules/
+server/node_modules/
+agent/node_modules/
 .DS_Store
 *.log
+
+# Secrets - DO NOT COMMIT
+agent/config.json
+.env

@@ -5,6 +5,7 @@ import { initBackground } from './modules/background.js';
 import { initRSS, fetchAllRSS } from './modules/rss.js';
 import { initClock, initWeather } from './modules/widgets.js';
 import { initNotes } from './modules/notes.js';
+import { initNetwork } from './modules/network.js';
 
 // Init State
 loadState();
@@ -573,6 +574,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initModal();     // Blocks modal
     initZoneModal(); // Zones modal
     initNotes();     // Quick Notes
+    initNetwork();   // Network Status
 
     // Register PWA Service Worker
     if ('serviceWorker' in navigator) {

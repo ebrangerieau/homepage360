@@ -1,0 +1,19 @@
+{
+    "targets": [
+        {
+            "name": "Routeur",
+            "host": "192.168.1.1"
+        },
+        {
+            "name": "NAS",
+            "host": "192.168.1.10"
+        },
+        {
+            "name": "Serveur Local",
+            "host": "192.168.1.20"
+        }
+    ],
+    "endpoint": "https://your-homepage360-domain.com/api/status",
+    "apiKey": "CHANGE_ME_GENERATE_WITH_openssl_rand_hex_32",
+    "intervalSeconds": 30
+}
