@@ -30,14 +30,21 @@ function render(searchQuery = '') {
         const zoneEl = document.createElement('section');
         zoneEl.className = 'zone';
         zoneEl.dataset.zoneId = zone.id;
+
+        const cols = zone.columns || 1;
         zoneEl.innerHTML = `
       <div class="zone-header">
         <h2>${zone.title}</h2>
-        <button class="delete-zone-btn" aria-label="Delete zone" data-zone-id="${zone.id}">×</button>
+        <div class="zone-controls">
+            <button class="layout-zone-btn" data-zone-id="${zone.id}" title="Layout: ${cols} colonne(s)">
+                ${cols === 1 ? '1️⃣' : cols === 2 ? '2️⃣' : '3️⃣'}
+            </button>
+            <button class="delete-zone-btn" aria-label="Delete zone" data-zone-id="${zone.id}">×</button>
+        </div>
       </div>
     `;
         const blockList = document.createElement('div');
-        blockList.className = 'block-list';
+        blockList.className = `block-list cols-${cols}`;
 
         filteredBlocks.forEach(block => {
             const blk = document.createElement('div');
@@ -82,6 +89,13 @@ function render(searchQuery = '') {
             e.stopPropagation();
             const zId = e.currentTarget.dataset.zoneId;
             deleteZone(zId);
+        };
+    });
+
+    document.querySelectorAll('.layout-zone-btn').forEach(btn => {
+        btn.onclick = (e) => {
+            e.stopPropagation();
+            toggleZoneLayout(e.currentTarget.dataset.zoneId);
         };
     });
 
@@ -196,6 +210,18 @@ function deleteZone(zoneId) {
             removeLogic();
         }
     });
+}
+
+function toggleZoneLayout(zoneId) {
+    const config = getConfig();
+    const zone = config.zones.find(z => z.id === zoneId);
+    if (zone) {
+        const current = zone.columns || 1;
+        // Cycle 1 -> 2 -> 3 -> 1
+        zone.columns = current >= 3 ? 1 : current + 1;
+        persistState();
+        render();
+    }
 }
 
 let editingBlockId = null;
