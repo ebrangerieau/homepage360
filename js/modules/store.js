@@ -60,10 +60,55 @@ export function getState() {
     return appState;
 }
 
+/**
+ * Validate URL to prevent javascript: and other dangerous protocols
+ */
+function isValidUrl(url) {
+    if (!url || typeof url !== 'string') return false;
+    try {
+        const parsed = new URL(url);
+        return ['http:', 'https:'].includes(parsed.protocol);
+    } catch {
+        return false;
+    }
+}
+
+/**
+ * Validate state structure to prevent malformed imports
+ */
+function validateState(state) {
+    if (!state || typeof state !== 'object') return false;
+    if (!state.profiles || typeof state.profiles !== 'object') return false;
+    if (!state.activeProfileId || typeof state.activeProfileId !== 'string') return false;
+    if (!state.profiles[state.activeProfileId]) return false;
+
+    // Validate each profile
+    for (const [id, profile] of Object.entries(state.profiles)) {
+        if (!profile || typeof profile !== 'object') return false;
+        if (!profile.name || typeof profile.name !== 'string') return false;
+        if (!Array.isArray(profile.zones)) return false;
+        if (!Array.isArray(profile.blocks)) return false;
+
+        // Sanitize URLs in blocks
+        for (const block of profile.blocks) {
+            if (block.url && !isValidUrl(block.url)) {
+                console.warn('Invalid URL sanitized in block:', block.label);
+                block.url = '#invalid-url';
+            }
+        }
+    }
+    return true;
+}
+
 export function setState(newState) {
+    if (!validateState(newState)) {
+        console.error('Invalid state format - import rejected');
+        return false;
+    }
     appState = newState;
     updateCurrentConfig();
     persistState();
+    return true;
 }
 
 // Get the configuration (zones, blocks, etc.) for the ACTIVE profile

@@ -1,7 +1,7 @@
 
 // RSS Module
 import { getConfig, persistState } from './store.js';
-import { showToast } from './ui.js';
+import { showToast, escapeHtml, isValidUrl, isValidImageUrl } from './ui.js';
 
 // Cache for scraped images (in memory for session)
 const imageCache = new Map();
@@ -224,19 +224,29 @@ function renderRSS(items) {
         return;
     }
 
-    rssList.innerHTML = items.map(item => `
-    <article class="rss-item" onclick="window.open('${item.link}', '_blank')">
-      ${item.image ? `<img src="${item.image}" alt="${item.title}" class="rss-image" loading="lazy" onerror="this.style.display='none'"/>` : ''}
+    rssList.innerHTML = items.map(item => {
+        // Validate and escape all external content
+        const safeLink = isValidUrl(item.link) ? escapeHtml(item.link) : '#';
+        const safeImage = item.image && isValidImageUrl(item.image) ? escapeHtml(item.image) : null;
+        const safeTitle = escapeHtml(item.title || 'Sans titre');
+        const safeDescription = escapeHtml(item.description || '');
+        const safeSource = escapeHtml(item.source || 'Source inconnue');
+        const safeDate = escapeHtml(new Date(item.pubDate).toLocaleDateString('fr-FR', { hour: '2-digit', minute: '2-digit' }));
+
+        return `
+    <article class="rss-item" onclick="window.open('${safeLink}', '_blank', 'noopener,noreferrer')">
+      ${safeImage ? `<img src="${safeImage}" alt="" class="rss-image" loading="lazy" onerror="this.style.display='none'"/>` : ''}
       <div class="rss-content">
-        <h3>${item.title}</h3>
-        <p>${item.description}</p>
+        <h3>${safeTitle}</h3>
+        <p>${safeDescription}</p>
         <div class="rss-meta">
-          <span>${item.source}</span>
-          <span>${new Date(item.pubDate).toLocaleDateString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</span>
+          <span>${safeSource}</span>
+          <span>${safeDate}</span>
         </div>
       </div>
     </article>
-  `).join('');
+  `;
+    }).join('');
 }
 
 export function initRSS() {

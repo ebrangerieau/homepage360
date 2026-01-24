@@ -1,9 +1,8 @@
-
 // Custom Background Module
 // Note: showToast and other UI helpers could be imported if needed, 
 // but we'll inject them or pass them as args if we want to avoid circular deps with main UI.
 // Here we import specific helpers from ui.js
-import { showToast } from './ui.js';
+import { showToast, isValidImageUrl } from './ui.js';
 
 export function initBackground() {
     const bgBtn = document.getElementById('bg-btn');
@@ -54,14 +53,25 @@ export function initBackground() {
 }
 
 function applyBgStyles(url) {
-    document.body.style.backgroundImage = `url(${url})`;
+    // Validate URL before applying
+    if (!isValidImageUrl(url)) {
+        console.warn('Invalid background URL blocked:', url.substring(0, 50));
+        return false;
+    }
+    // Escape CSS special characters to prevent injection
+    const safeUrl = url.replace(/[()'"`]/g, encodeURIComponent);
+    document.body.style.backgroundImage = `url("${safeUrl}")`;
     document.body.classList.add('has-bg');
+    return true;
 }
 
 function saveAndApply(url, closeCallback) {
     try {
+        if (!applyBgStyles(url)) {
+            showToast('URL d\'image invalide', 'error');
+            return;
+        }
         localStorage.setItem('customBackground', url);
-        applyBgStyles(url);
         if (closeCallback) closeCallback();
         showToast('Fond d\'écran mis à jour', 'success');
     } catch (e) {

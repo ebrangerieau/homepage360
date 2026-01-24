@@ -1,6 +1,6 @@
 
 import { loadState, getConfig, persistState, getState, setActiveProfile, deleteProfile, createProfile, setState } from './modules/store.js';
-import { showToast, showConfirm } from './modules/ui.js';
+import { showToast, showConfirm, escapeHtml, isValidUrl } from './modules/ui.js';
 import { initBackground } from './modules/background.js';
 import { initRSS, fetchAllRSS } from './modules/rss.js';
 import { initClock, initWeather } from './modules/widgets.js';
@@ -35,12 +35,12 @@ function render(searchQuery = '') {
         const cols = zone.columns || 1;
         zoneEl.innerHTML = `
       <div class="zone-header">
-        <h2>${zone.title}</h2>
+        <h2>${escapeHtml(zone.title)}</h2>
         <div class="zone-controls">
-            <button class="layout-zone-btn" data-zone-id="${zone.id}" title="Layout: ${cols} colonne(s)">
+            <button class="layout-zone-btn" data-zone-id="${escapeHtml(zone.id)}" title="Layout: ${cols} colonne(s)">
                 ${cols === 1 ? '1️⃣' : cols === 2 ? '2️⃣' : '3️⃣'}
             </button>
-            <button class="delete-zone-btn" aria-label="Delete zone" data-zone-id="${zone.id}">×</button>
+            <button class="delete-zone-btn" aria-label="Delete zone" data-zone-id="${escapeHtml(zone.id)}">×</button>
         </div>
       </div>
     `;
@@ -57,12 +57,17 @@ function render(searchQuery = '') {
 
             blk.onclick = (e) => {
                 if (!e.target.closest('.block-action-btn')) {
-                    window.open(block.url, '_blank');
+                    if (isValidUrl(block.url)) {
+                        window.open(block.url, '_blank', 'noopener,noreferrer');
+                    } else {
+                        console.warn('Blocked invalid URL:', block.url);
+                        showToast('URL invalide', 'error');
+                    }
                 }
             };
 
             blk.innerHTML = `
-        <span>${block.label}</span>
+        <span>${escapeHtml(block.label)}</span>
         <div class="block-actions">
            <button class="block-action-btn edit" title="Modifier">✎</button>
            <button class="block-action-btn delete" title="Supprimer">×</button>

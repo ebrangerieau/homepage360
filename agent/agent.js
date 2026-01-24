@@ -2,28 +2,75 @@ const ping = require('ping');
 const fs = require('fs');
 const path = require('path');
 
-// Load configuration
+// ============================================
+// Security: Path Validation
+// ============================================
 const configPath = process.env.CONFIG_PATH || path.join(__dirname, 'config.json');
 
+// Prevent path traversal attacks
+const resolvedPath = path.resolve(configPath);
+const allowedDir = path.resolve(__dirname);
+
+if (!resolvedPath.startsWith(allowedDir)) {
+    console.error('❌ FATAL: CONFIG_PATH must be within the agent directory');
+    console.error('   Attempted path:', resolvedPath);
+    process.exit(1);
+}
+
+if (!resolvedPath.endsWith('.json')) {
+    console.error('❌ FATAL: CONFIG_PATH must be a .json file');
+    process.exit(1);
+}
+
+// ============================================
+// Load Configuration
+// ============================================
 let config;
 try {
-    config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    config = JSON.parse(fs.readFileSync(resolvedPath, 'utf8'));
 } catch (err) {
-    console.error('Error loading config.json:', err.message);
-    console.error('Please create config.json based on config.example.json');
+    console.error('❌ Error loading config.json:', err.message);
+    console.error('   Please create config.json based on config.example.json');
     process.exit(1);
 }
 
-const { targets, endpoint, apiKey, intervalSeconds = 30 } = config;
+const { targets, endpoint, intervalSeconds = 30 } = config;
 
-if (!targets || !endpoint || !apiKey) {
-    console.error('Missing required config: targets, endpoint, or apiKey');
+// Support API key from environment variable (more secure)
+const apiKey = process.env.AGENT_API_KEY || config.apiKey;
+
+// ============================================
+// Validation
+// ============================================
+if (!targets || !Array.isArray(targets) || targets.length === 0) {
+    console.error('❌ Missing or invalid "targets" in config');
     process.exit(1);
 }
 
-console.log(`Homepage360 Network Agent starting...`);
-console.log(`Monitoring ${targets.length} targets every ${intervalSeconds}s`);
-console.log(`Reporting to: ${endpoint}`);
+if (!endpoint || typeof endpoint !== 'string') {
+    console.error('❌ Missing "endpoint" in config');
+    process.exit(1);
+}
+
+if (!apiKey || apiKey.includes('CHANGE_ME')) {
+    console.error('❌ API key not configured');
+    console.error('   Set AGENT_API_KEY environment variable or update apiKey in config.json');
+    console.error('   Generate one with: openssl rand -hex 32');
+    process.exit(1);
+}
+
+// Security check: HTTPS required in production
+if (!endpoint.startsWith('https://') && !endpoint.includes('localhost') && !endpoint.includes('127.0.0.1')) {
+    console.error('❌ Endpoint must use HTTPS in production');
+    console.error('   Current endpoint:', endpoint);
+    process.exit(1);
+}
+
+console.log(`✅ Homepage360 Network Agent starting...`);
+console.log(`📡 Monitoring ${targets.length} targets every ${intervalSeconds}s`);
+console.log(`🌐 Reporting to: ${endpoint}`);
+console.log(`🔒 API Key: ${apiKey.substring(0, 4)}...${apiKey.substring(apiKey.length - 4)}`);
+
 
 async function checkDevices() {
     const statuses = [];

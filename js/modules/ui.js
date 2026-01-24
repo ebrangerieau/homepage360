@@ -1,6 +1,64 @@
 
 // UI Utilities Module
 
+// ============================================
+// Security Utilities
+// ============================================
+
+/**
+ * Escape HTML special characters to prevent XSS attacks
+ * @param {string} str - String to escape
+ * @returns {string} - Escaped string safe for innerHTML
+ */
+export function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    if (typeof str !== 'string') return String(str);
+    return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+/**
+ * Validate URL to prevent javascript: and other dangerous protocols
+ * @param {string} url - URL to validate
+ * @returns {boolean} - True if URL is safe
+ */
+export function isValidUrl(url) {
+    if (!url || typeof url !== 'string') return false;
+    try {
+        const parsed = new URL(url);
+        return ['http:', 'https:'].includes(parsed.protocol);
+    } catch {
+        return false;
+    }
+}
+
+/**
+ * Validate image URL (includes data: URLs for base64 images)
+ * @param {string} url - URL to validate
+ * @returns {boolean} - True if URL is a valid image source
+ */
+export function isValidImageUrl(url) {
+    if (!url || typeof url !== 'string') return false;
+    try {
+        // Allow data: URLs for images
+        if (url.startsWith('data:image/')) return true;
+
+        const parsed = new URL(url);
+        return ['http:', 'https:'].includes(parsed.protocol);
+    } catch {
+        return false;
+    }
+}
+
+// ============================================
+// UI Components
+// ============================================
+
+
 export function showToast(message, type = 'info', duration = 3000) {
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;

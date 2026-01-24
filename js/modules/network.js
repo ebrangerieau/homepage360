@@ -1,6 +1,8 @@
 // Network Status Module
 // Fetches and displays network device statuses
 
+import { escapeHtml } from './ui.js';
+
 let networkRefreshInterval = null;
 
 export function initNetwork() {
@@ -76,15 +78,17 @@ async function fetchNetworkStatus() {
         devicesContainer.innerHTML = sortedDevices.map(device => {
             const statusIcon = device.alive ? '🟢' : '🔴';
             const statusClass = device.alive ? 'online' : 'offline';
-            const latencyText = device.alive && device.latency ? `${device.latency}ms` : '';
-            const latencyClass = device.latency > 100 ? 'high-latency' : '';
+            // Sanitize latency - ensure it's a number
+            const latencyNum = parseInt(device.latency) || 0;
+            const latencyText = device.alive && latencyNum > 0 ? `${latencyNum}ms` : '';
+            const latencyClass = latencyNum > 100 ? 'high-latency' : '';
 
             return `
                 <div class="network-device ${statusClass}">
                     <span class="device-status">${statusIcon}</span>
-                    <span class="device-name">${device.name}</span>
-                    <span class="device-host">${device.host}</span>
-                    ${latencyText ? `<span class="device-latency ${latencyClass}">${latencyText}</span>` : ''}
+                    <span class="device-name">${escapeHtml(device.name)}</span>
+                    <span class="device-host">${escapeHtml(device.host)}</span>
+                    ${latencyText ? `<span class="device-latency ${latencyClass}">${escapeHtml(latencyText)}</span>` : ''}
                 </div>
             `;
         }).join('');
