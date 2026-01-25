@@ -2,7 +2,7 @@
 
 **Homepage 360** est un tableau de bord personnel moderne, modulaire et entièrement personnalisable, conçu pour centraliser vos raccourcis, vos flux d'actualités et vos outils du quotidien dans une interface élégante et fluide.
 
-![Aperçu du projet](icon-512.png)
+![Aperçu du projet](screenshots/homepage_preview.png)
 
 ## ✨ Caractéristiques
 
