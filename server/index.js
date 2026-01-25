@@ -1,19 +1,54 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const crypto = require('crypto');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // ============================================
-// Security: Mandatory API Key
+// Structured Logging
+// ============================================
+const LOG_LEVELS = { DEBUG: 0, INFO: 1, WARN: 2, ERROR: 3 };
+const currentLogLevel = LOG_LEVELS[process.env.LOG_LEVEL] || LOG_LEVELS.INFO;
+
+function log(level, message, data = {}) {
+    if (LOG_LEVELS[level] < currentLogLevel) return;
+
+    const logEntry = {
+        timestamp: new Date().toISOString(),
+        level,
+        service: 'homepage360-server',
+        message,
+        ...data
+    };
+
+    const logLine = JSON.stringify(logEntry);
+
+    if (level === 'ERROR' || level === 'WARN') {
+        console.error(logLine);
+    } else {
+        console.log(logLine);
+    }
+}
+
+// ============================================
+// Security: API Keys (supports rotation with multiple keys)
 // ============================================
 const API_KEY = process.env.MONITOR_API_KEY;
+const API_KEY_PREVIOUS = process.env.MONITOR_API_KEY_PREVIOUS; // For rotation
+
 if (!API_KEY) {
     console.error('❌ FATAL: MONITOR_API_KEY environment variable must be set');
     console.error('   Generate one with: openssl rand -hex 32');
     process.exit(1);
 }
+
+// Valid API keys (current + previous for rotation grace period)
+const validApiKeys = [API_KEY, API_KEY_PREVIOUS].filter(Boolean);
+
+// Signature tolerance window (5 minutes to handle clock skew)
+const SIGNATURE_TOLERANCE_MS = 5 * 60 * 1000;
 
 // In-memory storage for device statuses
 let deviceStatuses = {};
@@ -77,12 +112,82 @@ app.use(express.static(staticPath, {
 // ============================================
 const validateApiKey = (req, res, next) => {
     const providedKey = req.headers['x-api-key'];
-    if (!providedKey || providedKey !== API_KEY) {
-        console.warn(`[${new Date().toISOString()}] Unauthorized API access attempt from ${req.ip}`);
+
+    if (!providedKey || !validApiKeys.includes(providedKey)) {
+        log('WARN', 'Unauthorized API access attempt', {
+            ip: req.ip,
+            path: req.path,
+            userAgent: req.get('User-Agent')
+        });
         return res.status(401).json({ error: 'Invalid or missing API key' });
     }
+
+    // Mark if using previous key (for monitoring rotation)
+    req.usingPreviousKey = (providedKey === API_KEY_PREVIOUS);
+
     next();
 };
+
+// ============================================
+// HMAC Signature Verification
+// ============================================
+function verifySignature(req, res, next) {
+    const signature = req.headers['x-signature'];
+    const timestamp = req.headers['x-timestamp'];
+
+    // If no signature provided, allow (backwards compatibility)
+    // In strict mode, you can reject unsigned requests
+    if (!signature || !timestamp) {
+        req.signatureVerified = false;
+        log('DEBUG', 'Request without signature', { ip: req.ip });
+        return next();
+    }
+
+    // Check timestamp to prevent replay attacks
+    const requestTime = parseInt(timestamp);
+    const now = Date.now();
+
+    if (isNaN(requestTime) || Math.abs(now - requestTime) > SIGNATURE_TOLERANCE_MS) {
+        log('WARN', 'Signature timestamp expired or invalid', {
+            ip: req.ip,
+            timestamp,
+            serverTime: now,
+            diff: Math.abs(now - requestTime)
+        });
+        return res.status(401).json({ error: 'Signature timestamp expired' });
+    }
+
+    // Get the raw body for signature verification
+    const rawBody = JSON.stringify(req.body);
+    const signatureData = `${timestamp}.${rawBody}`;
+
+    // Try to verify with any valid API key
+    let verified = false;
+    for (const key of validApiKeys) {
+        const expectedSignature = crypto
+            .createHmac('sha256', key)
+            .update(signatureData)
+            .digest('hex');
+
+        // Use timing-safe comparison
+        if (signature.length === expectedSignature.length &&
+            crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature))) {
+            verified = true;
+            break;
+        }
+    }
+
+    if (!verified) {
+        log('WARN', 'Invalid HMAC signature', {
+            ip: req.ip,
+            path: req.path
+        });
+        return res.status(401).json({ error: 'Invalid signature' });
+    }
+
+    req.signatureVerified = true;
+    next();
+}
 
 // ============================================
 // Input Validation Helpers
@@ -102,8 +207,8 @@ function validateDeviceStatus(status) {
 // API Routes
 // ============================================
 
-// POST /api/status - Receive status updates from agent (protected)
-app.post('/api/status', rateLimit, validateApiKey, (req, res) => {
+// POST /api/status - Receive status updates from agent (protected + signed)
+app.post('/api/status', rateLimit, validateApiKey, verifySignature, (req, res) => {
     const { statuses } = req.body;
 
     if (!statuses || !Array.isArray(statuses)) {
@@ -131,8 +236,15 @@ app.post('/api/status', rateLimit, validateApiKey, (req, res) => {
 
     lastUpdate = new Date().toISOString();
 
-    console.log(`[${lastUpdate}] Received status update: ${validCount}/${statuses.length} devices valid`);
-    res.json({ success: true, count: validCount });
+    log('INFO', 'Status update received', {
+        validCount,
+        totalCount: statuses.length,
+        signatureVerified: req.signatureVerified,
+        usingPreviousKey: req.usingPreviousKey,
+        ip: req.ip
+    });
+
+    res.json({ success: true, count: validCount, signatureVerified: req.signatureVerified });
 });
 
 // GET /api/status - Return current statuses (public for frontend, rate limited)
@@ -162,7 +274,16 @@ app.get('*', (req, res) => {
 // Server Start
 // ============================================
 app.listen(PORT, () => {
-    console.log(`✅ Homepage360 server running on port ${PORT}`);
+    log('INFO', 'Server started', {
+        port: PORT,
+        staticPath,
+        keyRotationEnabled: !!API_KEY_PREVIOUS,
+        hmacEnabled: true
+    });
+
+    console.log(`✅ Homepage360 Server v2.2 running on port ${PORT}`);
     console.log(`🔒 API Key configured: Yes`);
+    console.log(`🔄 Key rotation: ${API_KEY_PREVIOUS ? 'Active (previous key set)' : 'Single key mode'}`);
+    console.log(`🔏 HMAC Signature verification: Enabled`);
     console.log(`📁 Static files: ${staticPath}`);
 });

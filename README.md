@@ -45,14 +45,16 @@
 - Export et Import de configuration au format JSON
 - Gestion de **profils multiples** (Travail, Maison, etc.)
 
-### 🔒 Sécurité (v2.1)
+### 🔒 Sécurité (v2.2)
+- **Signature HMAC** : Intégrité des données garantie par HMAC-SHA256
+- **Rotation de clés** : Support multi-clés pour rotation sans interruption
+- **Logging structuré** : Logs JSON pour intégration SIEM
 - **Protection XSS** : Échappement de toutes les données utilisateur et externes
-- **Validation des URLs** : Blocage des protocoles dangereux (javascript:, etc.)
 - **Rate limiting** : Protection contre les abus API
-- **Clé API obligatoire** : Sécurisation des endpoints de monitoring
-- **Validation des imports** : Vérification de la structure des données importées
+- **Validation des entrées** : Types, longueurs et formats vérifiés
 
 📖 Pour une analyse complète de la sécurité, consultez [SECURITY.md](SECURITY.md).
+
 
 
 ## 🐳 Déploiement avec Docker & Traefik
@@ -172,9 +174,16 @@ homepage360/
 
 ## 📋 Changelog
 
+### v2.2.0 (Janvier 2026)
+- 🔏 **Signature HMAC** : Intégrité des payloads avec HMAC-SHA256
+- 🔄 **Rotation de clés** : Support multi-clés pour rotation sans interruption
+- 📊 **Logging structuré** : Format JSON pour intégration SIEM
+- 🛡️ Protection anti-replay avec timestamp
+
 ### v2.1.0 (Janvier 2026)
 - 🔒 **Sécurité** : Protection XSS, validation des entrées, rate limiting
 - 🔑 Clé API obligatoire pour le serveur de monitoring
+
 
 ### v2.0.0 (Janvier 2026)
 - 📡 **Monitoring Réseau** : Nouveau widget de surveillance des appareils

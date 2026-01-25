@@ -1,6 +1,49 @@
 const ping = require('ping');
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
+
+// ============================================
+// Structured Logging
+// ============================================
+const LOG_LEVELS = { DEBUG: 0, INFO: 1, WARN: 2, ERROR: 3 };
+const currentLogLevel = LOG_LEVELS[process.env.LOG_LEVEL] || LOG_LEVELS.INFO;
+
+function log(level, message, data = {}) {
+    if (LOG_LEVELS[level] < currentLogLevel) return;
+
+    const logEntry = {
+        timestamp: new Date().toISOString(),
+        level,
+        service: 'homepage360-agent',
+        message,
+        ...data
+    };
+
+    const logLine = JSON.stringify(logEntry);
+
+    if (level === 'ERROR') {
+        console.error(logLine);
+    } else {
+        console.log(logLine);
+    }
+}
+
+// ============================================
+// HMAC Signature Helper
+// ============================================
+function signPayload(payload, secret) {
+    const payloadString = JSON.stringify(payload);
+    const timestamp = Date.now().toString();
+    const signatureData = `${timestamp}.${payloadString}`;
+
+    const signature = crypto
+        .createHmac('sha256', secret)
+        .update(signatureData)
+        .digest('hex');
+
+    return { signature, timestamp, payloadString };
+}
 
 // ============================================
 // Security: Path Validation
@@ -66,10 +109,17 @@ if (!endpoint.startsWith('https://') && !endpoint.includes('localhost') && !endp
     process.exit(1);
 }
 
-console.log(`✅ Homepage360 Network Agent starting...`);
+log('INFO', 'Agent starting', {
+    targets: targets.length,
+    interval: intervalSeconds,
+    endpoint: endpoint.replace(/\/\/[^@]+@/, '//***@') // Mask credentials if any
+});
+
+console.log(`✅ Homepage360 Network Agent v2.2 starting...`);
 console.log(`📡 Monitoring ${targets.length} targets every ${intervalSeconds}s`);
 console.log(`🌐 Reporting to: ${endpoint}`);
 console.log(`🔒 API Key: ${apiKey.substring(0, 4)}...${apiKey.substring(apiKey.length - 4)}`);
+console.log(`🔏 HMAC Signature: Enabled`);
 
 
 async function checkDevices() {
@@ -110,13 +160,20 @@ async function checkDevices() {
 
 async function sendStatuses(statuses) {
     try {
+        const payload = { statuses };
+
+        // Sign the payload with HMAC-SHA256
+        const { signature, timestamp, payloadString } = signPayload(payload, apiKey);
+
         const response = await fetch(endpoint, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-API-Key': apiKey
+                'X-API-Key': apiKey,
+                'X-Signature': signature,
+                'X-Timestamp': timestamp
             },
-            body: JSON.stringify({ statuses })
+            body: payloadString
         });
 
         if (!response.ok) {
@@ -124,9 +181,19 @@ async function sendStatuses(statuses) {
         }
 
         const data = await response.json();
-        console.log(`  ✅ Sent ${data.count} statuses to server`);
+
+        log('INFO', 'Statuses sent successfully', {
+            count: data.count,
+            signatureUsed: true
+        });
+
+        console.log(`  ✅ Sent ${data.count} statuses to server (signed)`);
 
     } catch (err) {
+        log('ERROR', 'Failed to send statuses', {
+            error: err.message,
+            endpoint: endpoint
+        });
         console.error(`  ❌ Failed to send statuses: ${err.message}`);
     }
 }
