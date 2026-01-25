@@ -52,6 +52,9 @@
 - **Clé API obligatoire** : Sécurisation des endpoints de monitoring
 - **Validation des imports** : Vérification de la structure des données importées
 
+📖 Pour une analyse complète de la sécurité, consultez [SECURITY.md](SECURITY.md).
+
+
 ## 🐳 Déploiement avec Docker & Traefik
 
 Le projet est pré-configuré pour être déployé derrière un reverse-proxy **Traefik** avec gestion automatique des certificats SSL (Let's Encrypt).
