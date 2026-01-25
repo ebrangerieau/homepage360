@@ -9,3 +9,4 @@ agent/node_modules/
 # Secrets - DO NOT COMMIT
 agent/config.json
 .env
+SECURITY_INTERNAL.md
