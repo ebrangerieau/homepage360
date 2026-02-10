@@ -45,7 +45,10 @@
 - Export et Import de configuration au format JSON
 - Gestion de **profils multiples** (Travail, Maison, etc.)
 
-### 🔒 Sécurité (v2.2)
+### 🔒 Sécurité (v2.3)
+- **Authentification multi-utilisateur** : Protection de l'accès frontend par login/password
+- **Sessions sécurisées** : Cookies httpOnly, secure, sameSite avec expiration configurable
+- **Brute force protection** : Verrouillage automatique après 5 tentatives (15 min)
 - **Signature HMAC** : Intégrité des données garantie par HMAC-SHA256
 - **Rotation de clés** : Support multi-clés pour rotation sans interruption
 - **Logging structuré** : Logs JSON pour intégration SIEM
@@ -56,6 +59,60 @@
 📖 Pour une analyse complète de la sécurité, consultez [SECURITY.md](SECURITY.md).
 
 
+
+## 🔐 Configuration de l'authentification
+
+Homepage360 utilise un système d'authentification par cookie pour protéger l'accès à l'interface.
+
+### Configuration initiale
+
+1. **Installez les dépendances** (si pas encore fait) :
+   ```bash
+   cd server
+   npm install
+   ```
+
+2. **Créez votre premier utilisateur** :
+
+   Le fichier `server/users.json` est automatiquement créé avec un utilisateur par défaut :
+   - **Username** : `admin`
+   - **Password** : `admin123`
+
+   ⚠️ **Important** : Changez ce mot de passe en production !
+
+3. **Ajoutez un nouvel utilisateur** (optionnel) :
+
+   Générez un hash bcrypt pour le mot de passe :
+   ```bash
+   node -e "const bcrypt = require('bcrypt'); bcrypt.hash('VotreMotDePasse', 12).then(h => console.log(h));"
+   ```
+
+   Puis ajoutez l'utilisateur dans `server/users.json` :
+   ```json
+   {
+     "users": [
+       {
+         "username": "votre_username",
+         "passwordHash": "$2b$12$...",
+         "createdAt": "2026-02-10T00:00:00.000Z"
+       }
+     ]
+   }
+   ```
+
+### Fonctionnalités
+
+- **Sessions persistantes** : 24 heures par défaut, 30 jours avec "Remember me"
+- **Timeout d'inactivité** : Déconnexion automatique après 4 heures sans activité
+- **Protection brute force** : Max 5 tentatives, verrouillage 15 minutes par IP
+- **Cookies sécurisés** : httpOnly, secure (HTTPS en prod), sameSite strict
+
+### Reset mot de passe
+
+Pour réinitialiser un mot de passe, générez un nouveau hash et modifiez `server/users.json` :
+```bash
+node -e "const bcrypt = require('bcrypt'); bcrypt.hash('NouveauMotDePasse', 12).then(h => console.log(h));"
+```
 
 ## 🐳 Déploiement avec Docker & Traefik
 
@@ -79,7 +136,9 @@ Le projet est pré-configuré pour être déployé derrière un reverse-proxy **
    MONITOR_API_KEY=votre-clé-générée-ici
    ```
 
-4. Lancez les conteneurs :
+4. **Configurez l'authentification** (voir section ci-dessus)
+
+5. Lancez les conteneurs :
    ```bash
    docker-compose up -d --build
    ```
@@ -173,6 +232,13 @@ homepage360/
 | `Esc` | Fermer les fenêtres modales |
 
 ## 📋 Changelog
+
+### v2.3.0 (Février 2026)
+- 🔐 **Authentification** : Système de login/password multi-utilisateur
+- 🍪 **Sessions sécurisées** : Cookies httpOnly avec expiration et remember me
+- 🛡️ **Brute force protection** : Verrouillage automatique après 5 tentatives
+- ⏱️ **Timeout inactivité** : Déconnexion automatique après 4h sans activité
+- 🚪 **Interface de logout** : Bouton de déconnexion dans l'interface
 
 ### v2.2.0 (Janvier 2026)
 - 🔏 **Signature HMAC** : Intégrité des payloads avec HMAC-SHA256

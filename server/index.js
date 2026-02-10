@@ -2,6 +2,9 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const crypto = require('crypto');
+const cookieParser = require('cookie-parser');
+const { login, logout, checkSession } = require('./auth');
+const { requireAuth } = require('./middleware/auth');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -59,6 +62,7 @@ let lastUpdate = null;
 // ============================================
 app.use(cors());
 app.use(express.json({ limit: '10kb' })); // Limit payload size
+app.use(cookieParser());
 
 // Simple rate limiting (in production, use express-rate-limit)
 const rateLimitMap = new Map();
@@ -100,7 +104,20 @@ setInterval(() => {
 // Static Files (restricted)
 // ============================================
 const staticPath = path.join(__dirname, '..');
-app.use(express.static(staticPath, {
+
+// Exception for login page - allow without authentication
+app.get('/login.html', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'login.html'));
+});
+app.get('/login.css', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'login.css'));
+});
+app.get('/js/login.js', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'js', 'login.js'));
+});
+
+// Protect all other static files with authentication
+app.use(requireAuth, express.static(staticPath, {
     index: 'index.html',
     dotfiles: 'deny', // Block .env, .gitignore, etc.
     extensions: ['html', 'css', 'js', 'png', 'json', 'webp', 'ico'],
@@ -207,6 +224,11 @@ function validateDeviceStatus(status) {
 // API Routes
 // ============================================
 
+// Authentication routes
+app.post('/api/auth/login', rateLimit, (req, res) => login(req, res, log));
+app.post('/api/auth/logout', requireAuth, (req, res) => logout(req, res, log));
+app.get('/api/auth/check', requireAuth, checkSession);
+
 // POST /api/status - Receive status updates from agent (protected + signed)
 app.post('/api/status', rateLimit, validateApiKey, verifySignature, (req, res) => {
     const { statuses } = req.body;
@@ -247,8 +269,8 @@ app.post('/api/status', rateLimit, validateApiKey, verifySignature, (req, res) =
     res.json({ success: true, count: validCount, signatureVerified: req.signatureVerified });
 });
 
-// GET /api/status - Return current statuses (public for frontend, rate limited)
-app.get('/api/status', rateLimit, (req, res) => {
+// GET /api/status - Return current statuses (protected for frontend, rate limited)
+app.get('/api/status', requireAuth, rateLimit, (req, res) => {
     res.json({
         devices: Object.values(deviceStatuses),
         lastUpdate: lastUpdate

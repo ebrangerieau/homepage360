@@ -10,3 +10,4 @@ agent/node_modules/
 agent/config.json
 .env
 SECURITY_INTERNAL.md
+server/users.json

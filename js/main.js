@@ -6,6 +6,10 @@ import { initRSS, fetchAllRSS } from './modules/rss.js';
 import { initClock, initWeather } from './modules/widgets.js';
 import { initNotes } from './modules/notes.js';
 import { initNetwork } from './modules/network.js';
+import { checkAuthAndRedirect, logout, refreshSessionPeriodically } from './modules/auth.js';
+
+// Check authentication before loading app
+await checkAuthAndRedirect();
 
 // Init State
 loadState();
@@ -606,6 +610,10 @@ document.addEventListener('DOMContentLoaded', () => {
     initZoneModal(); // Zones modal
     initNotes();     // Quick Notes
     initNetwork();   // Network Status
+
+    // Authentication
+    refreshSessionPeriodically(); // Start session refresh
+    document.getElementById('logout-btn').addEventListener('click', logout);
 
     // Register PWA Service Worker
     if ('serviceWorker' in navigator) {
