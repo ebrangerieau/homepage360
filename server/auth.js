@@ -300,6 +300,7 @@ async function login(req, res, log) {
     // Trouver l'utilisateur
     const user = await findUser(username);
     if (!user) {
+      console.log(`[DEBUG] User not found: ${username}`);
       recordLoginAttempt(ip, false);
       log('WARN', 'Failed login attempt', {
         username,
@@ -314,8 +315,10 @@ async function login(req, res, log) {
       });
     }
 
+    console.log(`[DEBUG] User found: ${username}, hash: ${user.passwordHash}`);
     // Vérifier le mot de passe
     const passwordValid = await verifyPassword(password, user.passwordHash);
+    console.log(`[DEBUG] Password check for ${username}: ${passwordValid}`);
     if (!passwordValid) {
       recordLoginAttempt(ip, false);
       log('WARN', 'Failed login attempt', {
