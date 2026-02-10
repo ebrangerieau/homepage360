@@ -116,14 +116,6 @@ app.get('/js/login.js', (req, res) => {
     res.sendFile(path.join(__dirname, '..', 'js', 'login.js'));
 });
 
-// Protect all other static files with authentication
-app.use(requireAuth, express.static(staticPath, {
-    index: 'index.html',
-    dotfiles: 'deny', // Block .env, .gitignore, etc.
-    extensions: ['html', 'css', 'js', 'png', 'json', 'webp', 'ico'],
-    maxAge: '1d'
-}));
-
 // ============================================
 // API Key Validation Middleware
 // ============================================
@@ -281,6 +273,18 @@ app.get('/api/status', requireAuth, rateLimit, (req, res) => {
 app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', uptime: process.uptime() });
 });
+
+// Protect all other static files with authentication
+app.use(requireAuth, express.static(staticPath, {
+    index: 'index.html',
+    dotfiles: 'deny', // Block .env, .gitignore, etc.
+    extensions: ['html', 'css', 'js', 'png', 'json', 'webp', 'ico'],
+    maxAge: '1d'
+}));
+
+
+
+
 
 // Fallback to index.html for SPA routing
 app.get('*', (req, res) => {
