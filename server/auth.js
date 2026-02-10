@@ -101,6 +101,32 @@ async function updateLastLogin(username) {
     user.lastLogin = new Date().toISOString();
     await saveUsers(data);
   }
+  await saveUsers(data);
+}
+
+
+/**
+ * Initialise l'authentification (crée admin par défaut si nécessaire)
+ */
+async function initializeAuth() {
+  const data = await loadUsers();
+  // Si aucun utilisateur ou tableau vide
+  if (!data.users || data.users.length === 0) {
+    console.log('[AUTH] Initializing default admin user...');
+    const hash = await hashPassword('admin123'); // Default password
+
+    const newData = {
+      users: [{
+        username: 'admin',
+        passwordHash: hash,
+        role: 'admin',
+        createdAt: new Date().toISOString()
+      }]
+    };
+
+    await saveUsers(newData);
+    console.log('[AUTH] Default user "admin" created with password "admin123"');
+  }
 }
 
 /**
@@ -414,5 +440,7 @@ module.exports = {
   findUser,
   login,
   logout,
-  checkSession
+
+  checkSession,
+  initializeAuth
 };

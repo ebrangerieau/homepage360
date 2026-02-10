@@ -3,7 +3,7 @@ const cors = require('cors');
 const path = require('path');
 const crypto = require('crypto');
 const cookieParser = require('cookie-parser');
-const { login, logout, checkSession } = require('./auth');
+const { login, logout, checkSession, initializeAuth } = require('./auth');
 const { requireAuth } = require('./middleware/auth');
 
 const app = express();
@@ -312,4 +312,9 @@ app.listen(PORT, () => {
     console.log(`🔄 Key rotation: ${API_KEY_PREVIOUS ? 'Active (previous key set)' : 'Single key mode'}`);
     console.log(`🔏 HMAC Signature verification: Enabled`);
     console.log(`📁 Static files: ${staticPath}`);
+
+    // Initialize Auth (Create default admin if needed)
+    initializeAuth().catch(err => {
+        console.error('❌ Failed to initialize auth:', err);
+    });
 });
