@@ -286,8 +286,8 @@ app.use(requireAuth, express.static(staticPath, {
 
 
 
-// Fallback to index.html for SPA routing
-app.get('*', (req, res) => {
+// Fallback to index.html for SPA routing (protected)
+app.get('*', requireAuth, (req, res) => {
     // Block access to sensitive files
     const blocked = ['.env', '.git', 'package.json', 'docker-compose', 'Dockerfile', 'node_modules'];
     if (blocked.some(b => req.path.includes(b))) {

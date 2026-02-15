@@ -1,9 +1,41 @@
+# Git
 .git
 .gitignore
+
+# Node modules (seront installés dans le conteneur)
 node_modules
+
+# Exemples et documentation
 Exemple
+directives
+README.md
+AGENT.md
+DEPLOYMENT.md
+DOCKER_COMPOSE_STRATEGY.md
+CHANGES_*.md
+AUTH_TESTING.md
+IMPLEMENTATION_SUMMARY.md
+NETWORK_SETUP.md
+QUICKSTART_AUTH.md
+SECURITY.md
+SECURITY_INTERNAL.md
+
+# Docker
 Dockerfile
 docker-compose.yml
-README.md
-directives
-AGENT.md
+docker-compose.override.yml
+.dockerignore
+
+# Tests et développement
+test_auth.html
+screenshots
+.env
+.env.example
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+

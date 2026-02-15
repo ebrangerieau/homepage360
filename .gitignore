@@ -11,3 +11,8 @@ agent/config.json
 .env
 SECURITY_INTERNAL.md
 server/users.json
+
+# NOTE: docker-compose.override.yml est COMMITÉ intentionnellement
+# Il est utilisé pour le développement local (sans Traefik)
+# En production, renommez ou supprimez ce fichier
+

@@ -1,0 +1,16 @@
+# docker-compose.override.yml
+# Fichier de surcharge pour le développement local (sans Traefik)
+#
+# IMPORTANT: En production, renommez ou supprimez ce fichier !
+#   mv docker-compose.override.yml docker-compose.override.yml.disabled
+#
+# Ce fichier modifie automatiquement la configuration pour le dev local
+
+services:
+  homepage360:
+    # Redémarrage automatique sauf si arrêt manuel (au lieu de 'always')
+    restart: unless-stopped
+
+    # Variable d'environnement pour le développement
+    environment:
+      - NODE_ENV=development
