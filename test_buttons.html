@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Test Menu Buttons</title>
+</head>
+
+<body>
+    <h1>Testing Button Clicks</h1>
+    <button id="test-btn">Click Me</button>
+    <div id="result"></div>
+
+    <script>
+        // Test if basic JS works
+        document.getElementById('test-btn').addEventListener('click', () => {
+            document.getElementById('result').textContent = 'Button clicked!';
+            console.log('Button works!');
+        });
+
+        // Test if modules can be loaded
+        async function testModules() {
+            try {
+                const response = await fetch('http://localhost:3000/js/modules/auth.js');
+                console.log('auth.js exists:', response.ok);
+
+                const mainResponse = await fetch('http://localhost:3000/js/main.js');
+                console.log('main.js exists:', mainResponse.ok);
+            } catch (error) {
+                console.error('Error loading modules:', error);
+            }
+        }
+
+        testModules();
+    </script>
+</body>
+
+</html>

@@ -8,10 +8,7 @@ import { initNotes } from './modules/notes.js';
 import { initNetwork } from './modules/network.js';
 import { checkAuthAndRedirect, logout, refreshSessionPeriodically } from './modules/auth.js';
 
-// Check authentication before loading app
-await checkAuthAndRedirect();
-
-// Init State
+// Init State (can be done at module level)
 loadState();
 
 // Core Render Logic
@@ -593,7 +590,14 @@ function initHelpModal() {
 function initSettings() { }
 
 // Initialization Sequence
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    // Check authentication first
+    const isAuthenticated = await checkAuthAndRedirect();
+    if (!isAuthenticated) {
+        // User will be redirected to login, stop initialization
+        return;
+    }
+
     initTheme();
     render();
     initSettings();

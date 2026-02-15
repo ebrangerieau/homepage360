@@ -116,6 +116,22 @@ app.get('/js/login.js', (req, res) => {
     res.sendFile(path.join(__dirname, '..', 'js', 'login.js'));
 });
 
+// Exception for PWA files - must be accessible without authentication
+app.get('/manifest.json', (req, res) => {
+    res.setHeader('Content-Type', 'application/manifest+json');
+    res.sendFile(path.join(__dirname, '..', 'manifest.json'));
+});
+app.get('/sw.js', (req, res) => {
+    res.setHeader('Content-Type', 'application/javascript');
+    res.sendFile(path.join(__dirname, '..', 'sw.js'));
+});
+app.get('/icon-512.png', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'icon-512.png'));
+});
+app.get('/favicon.ico', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'favicon.ico'));
+});
+
 // ============================================
 // API Key Validation Middleware
 // ============================================
