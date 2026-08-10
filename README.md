@@ -77,6 +77,13 @@ Dans ce mode, `login.html` reste servi mais n'est plus requis : l'interface, l'A
 les fichiers statiques sont accessibles sans session, et le bouton de déconnexion est masqué.
 Par défaut (`AUTH_ENABLED` absent ou `true`), le login interne est actif.
 
+⚠️ **`AUTH_ENABLED=false` n'a de sens que si le middleware Traefik protège bien le
+routeur.** Vérifiez que le label suivant est présent dans `docker-compose.yml` :
+```yaml
+traefik.http.routers.homepage360.middlewares=tinyauth-proxy@docker
+```
+Sans ce label, désactiver `AUTH_ENABLED` expose l'interface sans aucune authentification.
+
 ### Configuration initiale
 
 1. **Installez les dépendances** (si pas encore fait) :
@@ -245,6 +252,10 @@ homepage360/
 | `Esc` | Fermer les fenêtres modales |
 
 ## 📋 Changelog
+
+### v2.3.1 (Août 2026)
+- ⚙️ **Interrupteur `AUTH_ENABLED`** : Permet de désactiver le login interne quand l'accès est déjà protégé en amont (TinyAuth/Traefik)
+- 🛡️ **Fix critique** : Le label `middlewares=tinyauth-proxy@docker` était manquant sur le routeur Traefik, exposant l'interface sans authentification lorsque `AUTH_ENABLED=false`
 
 ### v2.3.0 (Février 2026)
 - 🔐 **Authentification** : Système de login/password multi-utilisateur
