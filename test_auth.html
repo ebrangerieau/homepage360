@@ -1,0 +1,56 @@
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+&lt;title&gt;Manual Login Test&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;h1&gt;Manual Login Test&lt;/h1&gt;
+&lt;button onclick="testLogin()"&gt;Test Login&lt;/button&gt;
+&lt;button onclick="testHomepage()"&gt;Test Homepage Access&lt;/button&gt;
+&lt;div id="result"&gt;&lt;/div&gt;
+
+&lt;script&gt;
+async function testLogin() {
+const result = document.getElementById('result');
+try {
+const response = await fetch('http://localhost:3000/api/auth/login', {
+method: 'POST',
+headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify({ username: 'admin', password: 'admin123' }),
+credentials: 'include'
+});
+const data = await response.json();
+result.innerHTML = `&lt;h2&gt;Login Result:&lt;/h2&gt;&lt;pre&gt;${JSON.stringify(data, null, 2)}&lt;/pre&gt;`;
+
+if (data.success) {
+result.innerHTML += '&lt;p style="color: green"&gt;✓ Login successful! You can now test homepage access.&lt;/p&gt;';
+}
+} catch (error) {
+result.innerHTML = `&lt;p style="color: red"&gt;Error: ${error.message}&lt;/p&gt;`;
+}
+}
+
+async function testHomepage() {
+const result = document.getElementById('result');
+try {
+const response = await fetch('http://localhost:3000/', {
+credentials: 'include'
+});
+
+if (response.ok) {
+result.innerHTML = `&lt;h2&gt;Homepage Access:&lt;/h2&gt;&lt;p style="color: green"&gt;✓ Successfully accessed homepage
+(Status: ${response.status})&lt;/p&gt;`;
+} else if (response.status === 302 || response.redirected) {
+result.innerHTML = `&lt;h2&gt;Homepage Access:&lt;/h2&gt;&lt;p style="color: orange"&gt;⚠ Redirected to:
+${response.url}&lt;/p&gt;`;
+} else {
+result.innerHTML = `&lt;h2&gt;Homepage Access:&lt;/h2&gt;&lt;p style="color: red"&gt;✗ Access denied (Status:
+${response.status})&lt;/p&gt;`;
+}
+} catch (error) {
+result.innerHTML = `&lt;p style="color: red"&gt;Error: ${error.message}&lt;/p&gt;`;
+}
+}
+&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;
