@@ -2,9 +2,6 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const crypto = require('crypto');
-const cookieParser = require('cookie-parser');
-const { login, logout, checkSession, initializeAuth } = require('./auth');
-const { requireAuth } = require('./middleware/auth');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -62,7 +59,6 @@ let lastUpdate = null;
 // ============================================
 app.use(cors());
 app.use(express.json({ limit: '10kb' })); // Limit payload size
-app.use(cookieParser());
 
 // Simple rate limiting (in production, use express-rate-limit)
 const rateLimitMap = new Map();
@@ -105,18 +101,7 @@ setInterval(() => {
 // ============================================
 const staticPath = path.join(__dirname, '..');
 
-// Exception for login page - allow without authentication
-app.get('/login.html', (req, res) => {
-    res.sendFile(path.join(__dirname, '..', 'login.html'));
-});
-app.get('/login.css', (req, res) => {
-    res.sendFile(path.join(__dirname, '..', 'login.css'));
-});
-app.get('/js/login.js', (req, res) => {
-    res.sendFile(path.join(__dirname, '..', 'js', 'login.js'));
-});
-
-// Exception for PWA files - must be accessible without authentication
+// PWA files
 app.get('/manifest.json', (req, res) => {
     res.setHeader('Content-Type', 'application/manifest+json');
     res.sendFile(path.join(__dirname, '..', 'manifest.json'));
@@ -232,11 +217,6 @@ function validateDeviceStatus(status) {
 // API Routes
 // ============================================
 
-// Authentication routes
-app.post('/api/auth/login', rateLimit, (req, res) => login(req, res, log));
-app.post('/api/auth/logout', requireAuth, (req, res) => logout(req, res, log));
-app.get('/api/auth/check', requireAuth, checkSession);
-
 // POST /api/status - Receive status updates from agent (protected + signed)
 app.post('/api/status', rateLimit, validateApiKey, verifySignature, (req, res) => {
     const { statuses } = req.body;
@@ -277,8 +257,8 @@ app.post('/api/status', rateLimit, validateApiKey, verifySignature, (req, res) =
     res.json({ success: true, count: validCount, signatureVerified: req.signatureVerified });
 });
 
-// GET /api/status - Return current statuses (protected for frontend, rate limited)
-app.get('/api/status', requireAuth, rateLimit, (req, res) => {
+// GET /api/status - Return current statuses (rate limited)
+app.get('/api/status', rateLimit, (req, res) => {
     res.json({
         devices: Object.values(deviceStatuses),
         lastUpdate: lastUpdate
@@ -290,8 +270,8 @@ app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', uptime: process.uptime() });
 });
 
-// Protect all other static files with authentication
-app.use(requireAuth, express.static(staticPath, {
+// Serve static files
+app.use(express.static(staticPath, {
     index: 'index.html',
     dotfiles: 'deny', // Block .env, .gitignore, etc.
     extensions: ['html', 'css', 'js', 'png', 'json', 'webp', 'ico'],
@@ -299,11 +279,8 @@ app.use(requireAuth, express.static(staticPath, {
 }));
 
 
-
-
-
-// Fallback to index.html for SPA routing (protected)
-app.get('*', requireAuth, (req, res) => {
+// Fallback to index.html for SPA routing
+app.get('*', (req, res) => {
     // Block access to sensitive files
     const blocked = ['.env', '.git', 'package.json', 'docker-compose', 'Dockerfile', 'node_modules'];
     if (blocked.some(b => req.path.includes(b))) {
@@ -328,9 +305,4 @@ app.listen(PORT, () => {
     console.log(`🔄 Key rotation: ${API_KEY_PREVIOUS ? 'Active (previous key set)' : 'Single key mode'}`);
     console.log(`🔏 HMAC Signature verification: Enabled`);
     console.log(`📁 Static files: ${staticPath}`);
-
-    // Initialize Auth (Create default admin if needed)
-    initializeAuth().catch(err => {
-        console.error('❌ Failed to initialize auth:', err);
-    });
 });

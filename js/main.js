@@ -6,7 +6,6 @@ import { initRSS, fetchAllRSS } from './modules/rss.js';
 import { initClock, initWeather } from './modules/widgets.js';
 import { initNotes } from './modules/notes.js';
 import { initNetwork } from './modules/network.js';
-import { checkAuthAndRedirect, logout, refreshSessionPeriodically } from './modules/auth.js';
 
 // Init State (can be done at module level)
 loadState();
@@ -591,13 +590,6 @@ function initSettings() { }
 
 // Initialization Sequence
 document.addEventListener('DOMContentLoaded', async () => {
-    // Check authentication first
-    const isAuthenticated = await checkAuthAndRedirect();
-    if (!isAuthenticated) {
-        // User will be redirected to login, stop initialization
-        return;
-    }
-
     initTheme();
     render();
     initSettings();
@@ -614,10 +606,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     initZoneModal(); // Zones modal
     initNotes();     // Quick Notes
     initNetwork();   // Network Status
-
-    // Authentication
-    refreshSessionPeriodically(); // Start session refresh
-    document.getElementById('logout-btn').addEventListener('click', logout);
 
     // Register PWA Service Worker
     if ('serviceWorker' in navigator) {
