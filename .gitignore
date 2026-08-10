@@ -12,6 +12,9 @@ agent/config.json
 SECURITY_INTERNAL.md
 server/users.json
 
+# Config Claude Code locale (personnelle, ne pas versionner)
+.claude/settings.local.json
+
 # NOTE: docker-compose.override.yml est COMMITÉ intentionnellement
 # Il est utilisé pour le développement local (sans Traefik)
 # En production, renommez ou supprimez ce fichier
