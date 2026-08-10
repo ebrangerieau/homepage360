@@ -50,6 +50,11 @@ if (!API_KEY) {
 // Valid API keys (current + previous for rotation grace period)
 const validApiKeys = [API_KEY, API_KEY_PREVIOUS].filter(Boolean);
 
+// Login système interne : peut être désactivé quand l'authentification
+// est déjà assurée en amont (ex: TinyAuth devant Traefik)
+const AUTH_ENABLED = (process.env.AUTH_ENABLED || 'true').toLowerCase() !== 'false';
+const authGate = AUTH_ENABLED ? requireAuth : (req, res, next) => next();
+
 // Signature tolerance window (5 minutes to handle clock skew)
 const SIGNATURE_TOLERANCE_MS = 5 * 60 * 1000;
 
@@ -234,8 +239,8 @@ function validateDeviceStatus(status) {
 
 // Authentication routes
 app.post('/api/auth/login', rateLimit, (req, res) => login(req, res, log));
-app.post('/api/auth/logout', requireAuth, (req, res) => logout(req, res, log));
-app.get('/api/auth/check', requireAuth, checkSession);
+app.post('/api/auth/logout', authGate, (req, res) => logout(req, res, log));
+app.get('/api/auth/check', authGate, (req, res) => checkSession(req, res, AUTH_ENABLED));
 
 // POST /api/status - Receive status updates from agent (protected + signed)
 app.post('/api/status', rateLimit, validateApiKey, verifySignature, (req, res) => {
@@ -278,7 +283,7 @@ app.post('/api/status', rateLimit, validateApiKey, verifySignature, (req, res) =
 });
 
 // GET /api/status - Return current statuses (protected for frontend, rate limited)
-app.get('/api/status', requireAuth, rateLimit, (req, res) => {
+app.get('/api/status', authGate, rateLimit, (req, res) => {
     res.json({
         devices: Object.values(deviceStatuses),
         lastUpdate: lastUpdate
@@ -291,7 +296,7 @@ app.get('/api/health', (req, res) => {
 });
 
 // Protect all other static files with authentication
-app.use(requireAuth, express.static(staticPath, {
+app.use(authGate, express.static(staticPath, {
     index: 'index.html',
     dotfiles: 'deny', // Block .env, .gitignore, etc.
     extensions: ['html', 'css', 'js', 'png', 'json', 'webp', 'ico'],
@@ -303,7 +308,7 @@ app.use(requireAuth, express.static(staticPath, {
 
 
 // Fallback to index.html for SPA routing (protected)
-app.get('*', requireAuth, (req, res) => {
+app.get('*', authGate, (req, res) => {
     // Block access to sensitive files
     const blocked = ['.env', '.git', 'package.json', 'docker-compose', 'Dockerfile', 'node_modules'];
     if (blocked.some(b => req.path.includes(b))) {
@@ -328,9 +333,12 @@ app.listen(PORT, () => {
     console.log(`🔄 Key rotation: ${API_KEY_PREVIOUS ? 'Active (previous key set)' : 'Single key mode'}`);
     console.log(`🔏 HMAC Signature verification: Enabled`);
     console.log(`📁 Static files: ${staticPath}`);
+    console.log(`🔑 Internal login: ${AUTH_ENABLED ? 'Enabled' : 'Disabled (external auth expected upstream)'}`);
 
-    // Initialize Auth (Create default admin if needed)
-    initializeAuth().catch(err => {
-        console.error('❌ Failed to initialize auth:', err);
-    });
+    if (AUTH_ENABLED) {
+        // Initialize Auth (Create default admin if needed)
+        initializeAuth().catch(err => {
+            console.error('❌ Failed to initialize auth:', err);
+        });
+    }
 });

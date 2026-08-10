@@ -64,6 +64,19 @@
 
 Homepage360 utilise un système d'authentification par cookie pour protéger l'accès à l'interface.
 
+### Désactiver le login interne
+
+Si l'accès est déjà protégé en amont (ex: TinyAuth devant Traefik), le login interne
+peut être désactivé pour éviter une double authentification :
+
+```env
+AUTH_ENABLED=false
+```
+
+Dans ce mode, `login.html` reste servi mais n'est plus requis : l'interface, l'API et
+les fichiers statiques sont accessibles sans session, et le bouton de déconnexion est masqué.
+Par défaut (`AUTH_ENABLED` absent ou `true`), le login interne est actif.
+
 ### Configuration initiale
 
 1. **Installez les dépendances** (si pas encore fait) :

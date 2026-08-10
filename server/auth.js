@@ -420,10 +420,12 @@ function logout(req, res, log) {
 
 /**
  * Route de vérification de session
+ * @param {boolean} authEnabled - False si le login interne est désactivé (auth déléguée en amont)
  */
-function checkSession(req, res) {
+function checkSession(req, res, authEnabled = true) {
   // Si on arrive ici, c'est que le middleware requireAuth a validé la session
-  res.json({ valid: true, username: req.username });
+  // (ou que le login interne est désactivé et qu'on ne l'a jamais appelé)
+  res.json({ valid: true, username: req.username || null, authEnabled });
 }
 
 module.exports = {

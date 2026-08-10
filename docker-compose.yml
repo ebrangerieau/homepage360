@@ -1,3 +1,12 @@
+# ============================================================
+# HOMEPAGE360 — Tableau de bord
+# Corrections appliquées :
+#  1. Section "ports" supprimée — accès uniquement via Traefik
+#     Le port 3000 sur l'hôte contournait l'authentification
+#  2. Login interne désactivé (AUTH_ENABLED=false) — la sécurité
+#     est assurée en amont par TinyAuth
+# ============================================================
+
 services:
   homepage360:
     build:
@@ -6,18 +15,19 @@ services:
     image: homepage360:latest
     container_name: homepage360
     restart: always
-    ports:
-      - "3000:3000"
+    # Pas de section "ports" — Traefik communique directement
+    # avec le conteneur via le réseau Docker (port 3000 interne)
     environment:
-      - MONITOR_API_KEY=${MONITOR_API_KEY:-change-me-in-production}
-      - NODE_ENV=production
+      - MONITOR_API_KEY=${MONITOR_API_KEY}
+      - AUTH_ENABLED=false
     networks:
       - web
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.homepage360.rule=Host(`votre-domaine.com`)"
+      - "traefik.docker.network=web"
+      - "traefik.http.routers.homepage360.rule=Host(`home.bandtrack.fr`)"
       - "traefik.http.routers.homepage360.entrypoints=websecure"
-      - "traefik.http.routers.homepage360.tls.certresolver=myresolver"
+      - "traefik.http.routers.homepage360.tls.certresolver=letsencrypt"
       - "traefik.http.services.homepage360.loadbalancer.server.port=3000"
 
 networks:

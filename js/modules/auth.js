@@ -6,8 +6,9 @@
 const SESSION_CHECK_INTERVAL = 30 * 60 * 1000; // 30 minutes
 
 /**
- * Check if user is authenticated and redirect to login if not
- * Should be called at app initialization
+ * Check if user is authenticated and redirect to login if not.
+ * Should be called at app initialization.
+ * @returns {Promise<{valid: boolean, authEnabled: boolean}>}
  */
 export async function checkAuthAndRedirect() {
     try {
@@ -19,16 +20,16 @@ export async function checkAuthAndRedirect() {
         if (!response.ok) {
             // Not authenticated, redirect to login
             window.location.href = '/login.html';
-            return false;
+            return { valid: false, authEnabled: true };
         }
 
         const data = await response.json();
-        return data.valid;
+        return { valid: data.valid, authEnabled: data.authEnabled !== false };
     } catch (error) {
         console.error('Auth check failed:', error);
         // On network error, redirect to login to be safe
         window.location.href = '/login.html';
-        return false;
+        return { valid: false, authEnabled: true };
     }
 }
 

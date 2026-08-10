@@ -592,7 +592,7 @@ function initSettings() { }
 // Initialization Sequence
 document.addEventListener('DOMContentLoaded', async () => {
     // Check authentication first
-    const isAuthenticated = await checkAuthAndRedirect();
+    const { valid: isAuthenticated, authEnabled } = await checkAuthAndRedirect();
     if (!isAuthenticated) {
         // User will be redirected to login, stop initialization
         return;
@@ -616,8 +616,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     initNetwork();   // Network Status
 
     // Authentication
-    refreshSessionPeriodically(); // Start session refresh
-    document.getElementById('logout-btn').addEventListener('click', logout);
+    if (authEnabled) {
+        refreshSessionPeriodically(); // Start session refresh
+        document.getElementById('logout-btn').addEventListener('click', logout);
+    } else {
+        // Login interne désactivé (auth déléguée en amont) : masquer le bouton
+        document.getElementById('logout-btn').style.display = 'none';
+    }
 
     // Register PWA Service Worker
     if ('serviceWorker' in navigator) {
