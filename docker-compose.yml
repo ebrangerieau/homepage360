@@ -28,6 +28,7 @@ services:
       - "traefik.http.routers.homepage360.rule=Host(`home.bandtrack.fr`)"
       - "traefik.http.routers.homepage360.entrypoints=websecure"
       - "traefik.http.routers.homepage360.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.homepage360.middlewares=tinyauth-proxy@docker"
       - "traefik.http.services.homepage360.loadbalancer.server.port=3000"
 
 networks:
